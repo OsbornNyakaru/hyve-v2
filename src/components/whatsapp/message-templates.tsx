@@ -307,7 +307,7 @@ export function MessageTemplates() {
                 </div>
 
                 <div className="text-xs text-gray-500">
-                  Use {{variableName}} for dynamic content. Variables will be automatically detected.
+                  Use &#123;&#123;variableName&#125;&#125; for dynamic content. Variables will be automatically detected.
                 </div>
 
                 <div className="flex space-x-3">
