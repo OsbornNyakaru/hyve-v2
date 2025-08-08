@@ -44,6 +44,11 @@ export class DatabaseService {
 
   async getUserProfile(clerkUserId: string): Promise<User | null> {
     try {
+      if (!clerkUserId) {
+        console.warn('No clerk user ID provided');
+        return null;
+      }
+
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -55,8 +60,8 @@ export class DatabaseService {
           // User not found, return null
           return null;
         }
-        console.error('Supabase error fetching user profile:', error);
-        throw new Error(`Failed to fetch user profile: ${error.message}`);
+        console.error('Database error:', error);
+        return null;
       }
 
       return this.mapUserProfileToUser(data);
@@ -142,11 +147,11 @@ export class DatabaseService {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Supabase error fetching waste reports:', error);
-        throw new Error(`Failed to fetch waste reports: ${error.message}`);
+        console.error('Database error:', error);
+        return [];
       }
 
-      return data.map(report => this.mapWasteReportFromDB(report));
+      return data ? data.map(this.mapWasteReportFromDB) : [];
     } catch (error) {
       console.error('Error fetching waste reports:', error);
       // Return empty array instead of throwing
@@ -339,43 +344,68 @@ export class DatabaseService {
   }
 
   private mapWasteReportFromDB(report: any): WasteReport {
+    // Parse coordinates from PostgreSQL point format
+    let coordinates: [number, number] = [-1.2921, 36.8219]; // Default Kilimani center
+    if (report.location_coordinates) {
+      const coordMatch = report.location_coordinates.match(/\(([^,]+),([^)]+)\)/);
+      if (coordMatch) {
+        coordinates = [parseFloat(coordMatch[1]), parseFloat(coordMatch[2])];
+      }
+    }
+
+    return {
+      id: report.id,
+      type: report.type,
+      location: {
+        address: report.location_address,
+        coordinates
+      },
+      description: report.description,
+      urgency: report.urgency,
+      status: report.status,
+      images: report.images || [],
+      createdAt: report.created_at,
+      resolvedAt: report.resolved_at,
+      credits: report.credits,
+      userId: report.user_id,
+      aiAnalysis: report.ai_analysis
+    };
+  }
+
+  // Real-time subscriptions
+  subscribeToWasteReports(callback: (reports: WasteReport[]) => void) {
     try {
-      return {
-        id: report.id,
-        type: report.type,
-        location: report.location,
-        description: report.description,
-        urgency: report.urgency,
-        status: report.status,
-        images: report.images || [],
-        createdAt: report.created_at,
-        resolvedAt: report.resolved_at,
-        credits: report.credits || 0,
-        userId: report.user_id,
-        aiAnalysis: report.ai_analysis,
-        classification: report.classification,
-        estimatedWeight: report.estimated_weight,
-        carbonCredits: report.carbon_credits
-      };
+      return supabase
+        .channel('waste_reports_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'waste_reports' },
+          () => {
+            // Refetch all reports when changes occur
+            this.getWasteReports().then(callback).catch(console.error);
+          }
+        )
+        .subscribe();
     } catch (error) {
-      console.error('Error mapping waste report:', error);
-      // Return a default report object
-      return {
-        id: report?.id || '',
-        type: report?.type || 'other',
-        location: report?.location || { address: '', coordinates: [0, 0] },
-        description: report?.description || '',
-        urgency: report?.urgency || 'low',
-        status: report?.status || 'pending',
-        images: report?.images || [],
-        createdAt: report?.created_at || new Date().toISOString(),
-        credits: report?.credits || 0,
-        userId: report?.user_id || '',
-        aiAnalysis: report?.ai_analysis,
-        classification: report?.classification,
-        estimatedWeight: report?.estimated_weight,
-        carbonCredits: report?.carbon_credits
-      };
+      console.error('Error setting up waste reports subscription:', error);
+      return { unsubscribe: () => {} };
+    }
+  }
+
+  subscribeToUserProfile(clerkUserId: string, callback: (user: User | null) => void) {
+    try {
+      return supabase
+        .channel('user_profile_changes')
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'user_profiles', filter: `clerk_user_id=eq.${clerkUserId}` },
+          () => {
+            // Refetch user profile when changes occur
+            this.getUserProfile(clerkUserId).then(callback).catch(console.error);
+          }
+        )
+        .subscribe();
+    } catch (error) {
+      console.error('Error setting up user profile subscription:', error);
+      return { unsubscribe: () => {} };
     }
   }
 }

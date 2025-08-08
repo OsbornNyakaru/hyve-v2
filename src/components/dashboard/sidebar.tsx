@@ -11,7 +11,8 @@ import {
   ChevronRight,
   User,
   Zap,
-  Plug
+  Plug,
+  MessageSquare
 } from 'lucide-react';
 import { useAppStore } from '../../lib/store';
 
@@ -26,6 +27,7 @@ export function DashboardSidebar() {
     { name: 'Map View', href: '/map', icon: Map },
     { name: 'AI Automation', href: '/dashboard/automation', icon: Zap },
     { name: 'Integrations', href: '/dashboard/integrations', icon: Plug },
+    { name: 'WhatsApp', href: '/dashboard/whatsapp', icon: MessageSquare },
     { name: 'Profile', href: '/dashboard/profile', icon: User },
     { name: 'Community', href: '/dashboard/community', icon: Users },
     { name: 'Achievements', href: '/dashboard/achievements', icon: Award },
