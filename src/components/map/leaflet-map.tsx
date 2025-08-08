@@ -198,8 +198,8 @@ export function LeafletMap({ filters }: LeafletMapProps) {
                       PicaOS Analysis ({Math.round(report.classification.confidence * 100)}% confidence)
                     </div>
                     <div className="grid grid-cols-2 gap-1 text-xs text-gray-600">
-                      <div>Weight: {report.estimatedWeight}kg</div>
-                      <div>Credits: +{report.carbonCredits}</div>
+                      <div>Weight: {report.estimatedWeight || report.classification.estimatedWeight}kg</div>
+                      <div>Credits: +{report.carbonCredits || 0}</div>
                     </div>
                   </div>
                 )}

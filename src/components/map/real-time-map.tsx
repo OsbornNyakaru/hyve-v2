@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { MapPin, AlertTriangle, CheckCircle, Clock, Navigation, ZoomIn, ZoomOut, Layers, Maximize2, Truck, Target, Flame } from 'lucide-react';
-import { useAppStore } from '../../lib/store';
+import { useAppStore, Pickup } from '../../lib/store';
 import { picaOSClient } from '../../lib/picaos-client';
 import { Button } from '../ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -65,11 +65,11 @@ export function RealTimeMap({ filters }: RealTimeMapProps) {
         updateHotspots(convertedHotspots);
         
         // Mock pickup updates (in production, this would come from PicaOS)
-        const mockPickups = [
+        const mockPickups: Pickup[] = [
           {
             id: 'pickup-001',
             reportId: 'KLM-001247',
-            status: 'in-progress' as const,
+            status: 'in-progress',
             scheduledDate: new Date().toISOString(),
             estimatedArrival: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
             driver: {
@@ -79,7 +79,7 @@ export function RealTimeMap({ filters }: RealTimeMapProps) {
             },
             location: {
               address: 'Yaya Centre Area, Kilimani',
-              coordinates: [-1.2921, 36.8219] as [number, number]
+              coordinates: [-1.2921, 36.8219]
             },
             wasteType: 'plastic',
             estimatedWeight: 15.5
@@ -394,7 +394,7 @@ export function RealTimeMap({ filters }: RealTimeMapProps) {
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
                         <div>Weight: {selectedItem.data.estimatedWeight}kg</div>
-                        <div>Credits: +{selectedItem.data.carbonCredits}</div>
+                        <div>Credits: +{selectedItem.data.carbonCredits || 0}</div>
                         <div>Recyclable: {selectedItem.data.classification.recyclable ? 'Yes' : 'No'}</div>
                         <div>Method: {selectedItem.data.classification.disposalMethod}</div>
                       </div>
