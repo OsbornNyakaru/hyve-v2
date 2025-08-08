@@ -40,6 +40,11 @@ export class DatabaseService {
 
   async getUserProfile(clerkUserId: string): Promise<User | null> {
     try {
+      if (!clerkUserId) {
+        console.warn('No clerk user ID provided');
+        return null;
+      }
+
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -51,7 +56,8 @@ export class DatabaseService {
           // User not found, return null
           return null;
         }
-        throw error;
+        console.error('Database error:', error);
+        return null;
       }
 
       return this.mapUserProfileToUser(data);
@@ -126,9 +132,12 @@ export class DatabaseService {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        return [];
+      }
 
-      return data.map(this.mapWasteReportFromDB);
+      return data ? data.map(this.mapWasteReportFromDB) : [];
     } catch (error) {
       console.error('Error fetching waste reports:', error);
       return [];
@@ -233,29 +242,39 @@ export class DatabaseService {
 
   // Real-time subscriptions
   subscribeToWasteReports(callback: (reports: WasteReport[]) => void) {
-    return supabase
-      .channel('waste_reports_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'waste_reports' },
-        () => {
-          // Refetch all reports when changes occur
-          this.getWasteReports().then(callback);
-        }
-      )
-      .subscribe();
+    try {
+      return supabase
+        .channel('waste_reports_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'waste_reports' },
+          () => {
+            // Refetch all reports when changes occur
+            this.getWasteReports().then(callback).catch(console.error);
+          }
+        )
+        .subscribe();
+    } catch (error) {
+      console.error('Error setting up waste reports subscription:', error);
+      return { unsubscribe: () => {} };
+    }
   }
 
   subscribeToUserProfile(clerkUserId: string, callback: (user: User | null) => void) {
-    return supabase
-      .channel('user_profile_changes')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'user_profiles', filter: `clerk_user_id=eq.${clerkUserId}` },
-        () => {
-          // Refetch user profile when changes occur
-          this.getUserProfile(clerkUserId).then(callback);
-        }
-      )
-      .subscribe();
+    try {
+      return supabase
+        .channel('user_profile_changes')
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'user_profiles', filter: `clerk_user_id=eq.${clerkUserId}` },
+          () => {
+            // Refetch user profile when changes occur
+            this.getUserProfile(clerkUserId).then(callback).catch(console.error);
+          }
+        )
+        .subscribe();
+    } catch (error) {
+      console.error('Error setting up user profile subscription:', error);
+      return { unsubscribe: () => {} };
+    }
   }
 }
 
