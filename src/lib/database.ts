@@ -29,11 +29,15 @@ export class DatabaseService {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error creating user profile:', error);
+        throw new Error(`Failed to create user profile: ${error.message}`);
+      }
 
       return this.mapUserProfileToUser(data);
     } catch (error) {
       console.error('Error creating user profile:', error);
+      // Don't throw here, return null to allow graceful handling
       return null;
     }
   }
@@ -51,12 +55,14 @@ export class DatabaseService {
           // User not found, return null
           return null;
         }
-        throw error;
+        console.error('Supabase error fetching user profile:', error);
+        throw new Error(`Failed to fetch user profile: ${error.message}`);
       }
 
       return this.mapUserProfileToUser(data);
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      // Don't throw here, return null to allow graceful handling
       return null;
     }
   }
@@ -81,11 +87,15 @@ export class DatabaseService {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error updating user profile:', error);
+        throw new Error(`Failed to update user profile: ${error.message}`);
+      }
 
       return this.mapUserProfileToUser(data);
     } catch (error) {
       console.error('Error updating user profile:', error);
+      // Don't throw here, return null to allow graceful handling
       return null;
     }
   }
@@ -98,23 +108,28 @@ export class DatabaseService {
         .insert({
           user_id: reportData.userId,
           type: reportData.type,
-          location_address: reportData.location.address,
-          location_coordinates: `(${reportData.location.coordinates[0]}, ${reportData.location.coordinates[1]})`,
+          location: reportData.location,
           description: reportData.description,
           urgency: reportData.urgency,
           status: reportData.status,
           images: reportData.images,
-          credits: reportData.credits,
-          ai_analysis: reportData.aiAnalysis
+          credits: reportData.credits || 0,
+          classification: reportData.classification,
+          estimated_weight: reportData.estimatedWeight,
+          carbon_credits: reportData.carbonCredits
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error creating waste report:', error);
+        throw new Error(`Failed to create waste report: ${error.message}`);
+      }
 
       return this.mapWasteReportFromDB(data);
     } catch (error) {
       console.error('Error creating waste report:', error);
+      // Don't throw here, return null to allow graceful handling
       return null;
     }
   }
@@ -126,11 +141,15 @@ export class DatabaseService {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error fetching waste reports:', error);
+        throw new Error(`Failed to fetch waste reports: ${error.message}`);
+      }
 
-      return data.map(this.mapWasteReportFromDB);
+      return data.map(report => this.mapWasteReportFromDB(report));
     } catch (error) {
       console.error('Error fetching waste reports:', error);
+      // Return empty array instead of throwing
       return [];
     }
   }
@@ -143,119 +162,221 @@ export class DatabaseService {
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error fetching user waste reports:', error);
+        throw new Error(`Failed to fetch user waste reports: ${error.message}`);
+      }
 
-      return data.map(this.mapWasteReportFromDB);
+      return data.map(report => this.mapWasteReportFromDB(report));
     } catch (error) {
       console.error('Error fetching user waste reports:', error);
+      // Return empty array instead of throwing
       return [];
     }
   }
 
   async updateWasteReport(id: string, updates: Partial<WasteReport>): Promise<WasteReport | null> {
     try {
-      const updateData: any = {};
-      
-      if (updates.status) updateData.status = updates.status;
-      if (updates.resolvedAt) updateData.resolved_at = updates.resolvedAt;
-      if (updates.credits !== undefined) updateData.credits = updates.credits;
-      if (updates.aiAnalysis) updateData.ai_analysis = updates.aiAnalysis;
-
       const { data, error } = await supabase
         .from('waste_reports')
-        .update(updateData)
+        .update({
+          type: updates.type,
+          location: updates.location,
+          description: updates.description,
+          urgency: updates.urgency,
+          status: updates.status,
+          images: updates.images,
+          credits: updates.credits,
+          classification: updates.classification,
+          estimated_weight: updates.estimatedWeight,
+          carbon_credits: updates.carbonCredits,
+          resolved_at: updates.resolvedAt
+        })
         .eq('id', id)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error updating waste report:', error);
+        throw new Error(`Failed to update waste report: ${error.message}`);
+      }
 
       return this.mapWasteReportFromDB(data);
     } catch (error) {
       console.error('Error updating waste report:', error);
+      // Don't throw here, return null to allow graceful handling
       return null;
     }
   }
 
-  // Helper methods to map database records to app types
-  private mapUserProfileToUser(profile: any): User {
-    return {
-      id: profile.clerk_user_id,
-      name: profile.name,
-      email: profile.email,
-      credits: profile.credits,
-      total_earned: profile.total_earned,
-      reportsCount: profile.reports_count,
-      verified_reports: profile.verified_reports,
-      recycling_score: profile.recycling_score,
-      badges: profile.badges || [],
-      joinedAt: profile.created_at,
-      isAuthenticated: true,
-      email_connected: profile.email_connected,
-      preferences: profile.preferences || {
-        emailNotifications: true,
-        smsNotifications: false,
-        pushNotifications: true,
-        automationEnabled: true,
-        realTimeUpdates: true
-      }
-    };
-  }
-
-  private mapWasteReportFromDB(report: any): WasteReport {
-    // Parse coordinates from PostgreSQL point format
-    let coordinates: [number, number] = [-1.2921, 36.8219]; // Default Kilimani center
-    if (report.location_coordinates) {
-      const coordMatch = report.location_coordinates.match(/\(([^,]+),([^)]+)\)/);
-      if (coordMatch) {
-        coordinates = [parseFloat(coordMatch[1]), parseFloat(coordMatch[2])];
-      }
-    }
-
-    return {
-      id: report.id,
-      type: report.type,
-      location: {
-        address: report.location_address,
-        coordinates
-      },
-      description: report.description,
-      urgency: report.urgency,
-      status: report.status,
-      images: report.images || [],
-      createdAt: report.created_at,
-      resolvedAt: report.resolved_at,
-      credits: report.credits,
-      userId: report.user_id,
-      aiAnalysis: report.ai_analysis
-    };
-  }
-
-  // Real-time subscriptions
+  // Subscription methods with error handling
   subscribeToWasteReports(callback: (reports: WasteReport[]) => void) {
-    return supabase
-      .channel('waste_reports_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'waste_reports' },
-        () => {
-          // Refetch all reports when changes occur
-          this.getWasteReports().then(callback);
+    try {
+      const subscription = supabase
+        .channel('waste_reports_changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'waste_reports' },
+          async () => {
+            try {
+              const reports = await this.getWasteReports();
+              callback(reports);
+            } catch (error) {
+              console.error('Error in waste reports subscription callback:', error);
+            }
+          }
+        )
+        .subscribe();
+
+      return {
+        unsubscribe: () => {
+          try {
+            subscription.unsubscribe();
+          } catch (error) {
+            console.error('Error unsubscribing from waste reports:', error);
+          }
         }
-      )
-      .subscribe();
+      };
+    } catch (error) {
+      console.error('Error setting up waste reports subscription:', error);
+      // Return a dummy subscription object
+      return {
+        unsubscribe: () => {}
+      };
+    }
   }
 
   subscribeToUserProfile(clerkUserId: string, callback: (user: User | null) => void) {
-    return supabase
-      .channel('user_profile_changes')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'user_profiles', filter: `clerk_user_id=eq.${clerkUserId}` },
-        () => {
-          // Refetch user profile when changes occur
-          this.getUserProfile(clerkUserId).then(callback);
+    try {
+      const subscription = supabase
+        .channel('user_profile_changes')
+        .on(
+          'postgres_changes',
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'user_profiles',
+            filter: `clerk_user_id=eq.${clerkUserId}`
+          },
+          async () => {
+            try {
+              const user = await this.getUserProfile(clerkUserId);
+              callback(user);
+            } catch (error) {
+              console.error('Error in user profile subscription callback:', error);
+            }
+          }
+        )
+        .subscribe();
+
+      return {
+        unsubscribe: () => {
+          try {
+            subscription.unsubscribe();
+          } catch (error) {
+            console.error('Error unsubscribing from user profile:', error);
+          }
         }
-      )
-      .subscribe();
+      };
+    } catch (error) {
+      console.error('Error setting up user profile subscription:', error);
+      // Return a dummy subscription object
+      return {
+        unsubscribe: () => {}
+      };
+    }
+  }
+
+  // Helper methods with error handling
+  private mapUserProfileToUser(profile: any): User {
+    try {
+      return {
+        id: profile.clerk_user_id,
+        name: profile.name || '',
+        email: profile.email || '',
+        credits: profile.credits || 0,
+        total_earned: profile.total_earned || 0,
+        reportsCount: profile.reports_count || 0,
+        verified_reports: profile.verified_reports || 0,
+        recycling_score: profile.recycling_score || 50,
+        badges: profile.badges || [],
+        joinedAt: profile.created_at || new Date().toISOString(),
+        isAuthenticated: true,
+        email_connected: profile.email_connected || false,
+        preferences: profile.preferences || {
+          emailNotifications: true,
+          smsNotifications: false,
+          pushNotifications: true,
+          automationEnabled: true,
+          realTimeUpdates: true
+        }
+      };
+    } catch (error) {
+      console.error('Error mapping user profile:', error);
+      // Return a default user object
+      return {
+        id: profile?.clerk_user_id || '',
+        name: profile?.name || 'Unknown User',
+        email: profile?.email || '',
+        credits: 0,
+        total_earned: 0,
+        reportsCount: 0,
+        verified_reports: 0,
+        recycling_score: 50,
+        badges: [],
+        joinedAt: new Date().toISOString(),
+        isAuthenticated: true,
+        email_connected: false,
+        preferences: {
+          emailNotifications: true,
+          smsNotifications: false,
+          pushNotifications: true,
+          automationEnabled: true,
+          realTimeUpdates: true
+        }
+      };
+    }
+  }
+
+  private mapWasteReportFromDB(report: any): WasteReport {
+    try {
+      return {
+        id: report.id,
+        type: report.type,
+        location: report.location,
+        description: report.description,
+        urgency: report.urgency,
+        status: report.status,
+        images: report.images || [],
+        createdAt: report.created_at,
+        resolvedAt: report.resolved_at,
+        credits: report.credits || 0,
+        userId: report.user_id,
+        aiAnalysis: report.ai_analysis,
+        classification: report.classification,
+        estimatedWeight: report.estimated_weight,
+        carbonCredits: report.carbon_credits
+      };
+    } catch (error) {
+      console.error('Error mapping waste report:', error);
+      // Return a default report object
+      return {
+        id: report?.id || '',
+        type: report?.type || 'other',
+        location: report?.location || { address: '', coordinates: [0, 0] },
+        description: report?.description || '',
+        urgency: report?.urgency || 'low',
+        status: report?.status || 'pending',
+        images: report?.images || [],
+        createdAt: report?.created_at || new Date().toISOString(),
+        credits: report?.credits || 0,
+        userId: report?.user_id || '',
+        aiAnalysis: report?.ai_analysis,
+        classification: report?.classification,
+        estimatedWeight: report?.estimated_weight,
+        carbonCredits: report?.carbon_credits
+      };
+    }
   }
 }
 

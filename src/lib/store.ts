@@ -151,6 +151,7 @@ export const useAppStore = create<AppState>()(
 
       loadUserProfile: async (clerkUserId: string) => {
         try {
+          set({ isLoading: true });
           let user = await db.getUserProfile(clerkUserId);
           if (!user) {
             // Create new user profile if doesn't exist
@@ -173,9 +174,14 @@ export const useAppStore = create<AppState>()(
               email_connected: false
             });
           }
-          set({ user });
+          if (user) {
+            set({ user });
+          }
         } catch (error) {
           console.error('Error loading user profile:', error);
+          // Don't throw, just log the error
+        } finally {
+          set({ isLoading: false });
         }
       },
 
@@ -252,6 +258,8 @@ export const useAppStore = create<AppState>()(
           set({ reports });
         } catch (error) {
           console.error('Error loading reports:', error);
+          // Set empty array instead of leaving reports undefined
+          set({ reports: [] });
         } finally {
           set({ isLoading: false });
         }
