@@ -372,42 +372,7 @@ export class DatabaseService {
     };
   }
 
-  // Real-time subscriptions
-  subscribeToWasteReports(callback: (reports: WasteReport[]) => void) {
-    try {
-      return supabase
-        .channel('waste_reports_changes')
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'waste_reports' },
-          () => {
-            // Refetch all reports when changes occur
-            this.getWasteReports().then(callback).catch(console.error);
-          }
-        )
-        .subscribe();
-    } catch (error) {
-      console.error('Error setting up waste reports subscription:', error);
-      return { unsubscribe: () => {} };
-    }
-  }
 
-  subscribeToUserProfile(clerkUserId: string, callback: (user: User | null) => void) {
-    try {
-      return supabase
-        .channel('user_profile_changes')
-        .on('postgres_changes',
-          { event: '*', schema: 'public', table: 'user_profiles', filter: `clerk_user_id=eq.${clerkUserId}` },
-          () => {
-            // Refetch user profile when changes occur
-            this.getUserProfile(clerkUserId).then(callback).catch(console.error);
-          }
-        )
-        .subscribe();
-    } catch (error) {
-      console.error('Error setting up user profile subscription:', error);
-      return { unsubscribe: () => {} };
-    }
-  }
 }
 
 export const db = new DatabaseService();

@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { ClerkProvider } from '@clerk/clerk-react'
 import { ThemeProvider } from './components/theme-provider'
-import { Toaster } from './components/ui/toaster'
+import { Toaster } from './components/ui/toast'
 import App from './App'
 import './index.css'
 

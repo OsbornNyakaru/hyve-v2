@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Toaster } from './components/ui/toast';
 import { useAppStore } from './lib/store';
 import { db } from './lib/database';
