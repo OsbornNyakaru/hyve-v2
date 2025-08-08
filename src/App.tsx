@@ -5,6 +5,7 @@ import { Toaster } from './components/ui/toast';
 import { useAppStore } from './lib/store';
 import { db } from './lib/database';
 import { useToast } from './hooks/use-toast';
+import { AuthGuard } from './components/auth/auth-guard';
 import HomePage from './pages/HomePage';
 import ReportPage from './pages/ReportPage';
 import MapPage from './pages/MapPage';
@@ -17,13 +18,18 @@ import IntegrationsPage from './pages/IntegrationsPage';
 import WhatsAppPage from './pages/WhatsAppPage';
 
 function App() {
-  const { user: clerkUser } = useUser();
+  const { user: clerkUser, isLoaded } = useUser();
   const { setUser, loadUserProfile, loadReports } = useAppStore();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
+    // Only proceed if Clerk has finished loading
+    if (!isLoaded) {
+      return;
+    }
+
     if (clerkUser) {
       // Load user profile from database
       loadUserProfile(clerkUser.id);
@@ -63,11 +69,11 @@ function App() {
     
     // Load all reports
     loadReports();
-  }, [clerkUser, setUser]);
+  }, [clerkUser, setUser, isLoaded]);
 
   // Set up real-time subscriptions
   useEffect(() => {
-    if (clerkUser) {
+    if (clerkUser && isLoaded) {
       try {
         // Subscribe to user profile changes
         const userSubscription = db.subscribeToUserProfile(clerkUser.id, (user) => {
@@ -87,7 +93,7 @@ function App() {
         console.error('Error setting up subscriptions:', error);
       }
     }
-  }, [clerkUser]);
+  }, [clerkUser, isLoaded]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -98,12 +104,36 @@ function App() {
         <Route path="/sign-in" element={<LoginPage />} />
         <Route path="/report" element={<ReportPage />} />
         <Route path="/map" element={<MapPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/dashboard/reports" element={<ReportsPage />} />
-        <Route path="/dashboard/profile" element={<ProfilePage />} />
-        <Route path="/dashboard/automation" element={<AutomationPage />} />
-        <Route path="/dashboard/integrations" element={<IntegrationsPage />} />
-        <Route path="/dashboard/whatsapp" element={<WhatsAppPage />} />
+        <Route path="/dashboard" element={
+          <AuthGuard>
+            <DashboardPage />
+          </AuthGuard>
+        } />
+        <Route path="/dashboard/reports" element={
+          <AuthGuard>
+            <ReportsPage />
+          </AuthGuard>
+        } />
+        <Route path="/dashboard/profile" element={
+          <AuthGuard>
+            <ProfilePage />
+          </AuthGuard>
+        } />
+        <Route path="/dashboard/automation" element={
+          <AuthGuard>
+            <AutomationPage />
+          </AuthGuard>
+        } />
+        <Route path="/dashboard/integrations" element={
+          <AuthGuard>
+            <IntegrationsPage />
+          </AuthGuard>
+        } />
+        <Route path="/dashboard/whatsapp" element={
+          <AuthGuard>
+            <WhatsAppPage />
+          </AuthGuard>
+        } />
         {/* Catch-all route for 404s */}
         <Route path="*" element={<HomePage />} />
       </Routes>

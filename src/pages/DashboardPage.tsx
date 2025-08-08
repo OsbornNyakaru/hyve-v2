@@ -1,5 +1,4 @@
 import { useUser } from '@clerk/clerk-react';
-import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Navbar } from '../components/layout/navbar';
 import { Footer } from '../components/layout/footer';
@@ -20,16 +19,13 @@ import { initializeRealTimeUpdates } from '../lib/store';
 export default function DashboardPage() {
   const { user } = useUser();
   const { user: storeUser } = useAppStore();
-  const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-    } else if (storeUser) {
+    if (user && storeUser) {
       // Initialize PicaOS real-time updates
       initializeRealTimeUpdates();
     }
-  }, [user, storeUser, navigate]);
+  }, [user, storeUser]);
 
   // Show email connection if not connected
   if (user && storeUser && !storeUser.email_connected) {
