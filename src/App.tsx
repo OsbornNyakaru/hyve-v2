@@ -13,6 +13,7 @@ import ReportsPage from './pages/ReportsPage';
 import ProfilePage from './pages/ProfilePage';
 import AutomationPage from './pages/AutomationPage';
 import IntegrationsPage from './pages/IntegrationsPage';
+import WhatsAppPage from './pages/WhatsAppPage';
 
 function App() {
   const { user: clerkUser } = useUser();
@@ -98,6 +99,7 @@ function App() {
         <Route path="/dashboard/profile" element={<ProfilePage />} />
         <Route path="/dashboard/automation" element={<AutomationPage />} />
         <Route path="/dashboard/integrations" element={<IntegrationsPage />} />
+        <Route path="/dashboard/whatsapp" element={<WhatsAppPage />} />
         {/* Catch-all route for 404s */}
         <Route path="*" element={<HomePage />} />
       </Routes>
