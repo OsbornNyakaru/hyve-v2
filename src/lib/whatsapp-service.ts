@@ -142,7 +142,7 @@ class WhatsAppService {
           await this.handleWasteReport(message, group, intent);
           break;
         case 'challenge_update':
-          await this.handleChallengeUpdate(message, group, intent);
+          await this.sendChallengeUpdate(group.id, intent.challengeId || 'challenge-001');
           break;
         case 'event_rsvp':
           await this.handleEventRSVP(message, group, intent);
