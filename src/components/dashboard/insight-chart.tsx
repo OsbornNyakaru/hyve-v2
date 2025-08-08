@@ -14,7 +14,7 @@ export function InsightChart() {
     const currentMonth = new Date().getMonth();
     
     return months.slice(Math.max(0, currentMonth - 5), currentMonth + 1).map((month, index) => {
-      const monthReports = reports.filter(r => {
+      const monthReports = (reports || []).filter(r => {
         const reportMonth = new Date(r.createdAt).getMonth();
         return reportMonth === (currentMonth - 5 + index);
       });

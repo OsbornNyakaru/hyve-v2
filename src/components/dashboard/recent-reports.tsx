@@ -9,7 +9,7 @@ export function RecentReports() {
   const { reports, updateReport } = useAppStore();
   const navigate = useNavigate();
   
-  const recentReports = reports
+  const recentReports = (reports || [])
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 4);
 

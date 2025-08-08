@@ -25,12 +25,12 @@ export function AchievementSystem() {
     { id: 'impact', name: 'Impact', icon: Gift }
   ];
 
-  const filteredAchievements = achievements.filter(achievement => 
+  const filteredAchievements = (achievements || []).filter(achievement => 
     selectedCategory === 'all' || achievement.category === selectedCategory
   );
 
-  const completedCount = achievements.filter(a => a.completed).length;
-  const totalCreditsEarned = achievements
+  const completedCount = (achievements || []).filter(a => a.completed).length;
+  const totalCreditsEarned = (achievements || [])
     .filter(a => a.completed)
     .reduce((sum, a) => sum + a.reward.credits, 0);
 
@@ -59,7 +59,7 @@ export function AchievementSystem() {
           <div className="flex items-center space-x-2">
             <Trophy className="w-4 h-4 md:w-5 md:h-5 text-accent" />
             <span className="text-sm md:text-base font-medium text-accent">
-              {completedCount}/{achievements.length}
+              {completedCount}/{(achievements || []).length}
             </span>
           </div>
         </div>
@@ -75,11 +75,11 @@ export function AchievementSystem() {
             <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Credits</div>
           </div>
           <div className="text-center p-3 md:p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-            <div className="text-lg md:text-2xl font-bold text-purple-600">{user?.badges.length || 0}</div>
+            <div className="text-lg md:text-2xl font-bold text-purple-600">{(user?.badges || []).length}</div>
             <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Badges</div>
           </div>
           <div className="text-center p-3 md:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-            <div className="text-lg md:text-2xl font-bold text-blue-600">{Math.round((completedCount / achievements.length) * 100)}%</div>
+            <div className="text-lg md:text-2xl font-bold text-blue-600">{Math.round((completedCount / (achievements || []).length) * 100)}%</div>
             <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Complete</div>
           </div>
         </div>
