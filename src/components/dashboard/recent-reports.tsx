@@ -9,9 +9,9 @@ export function RecentReports() {
   const { reports, updateReport } = useAppStore();
   const navigate = useNavigate();
   
-  const recentReports = (reports || [])
+  const recentReports = Array.isArray(reports) ? reports
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 4);
+    .slice(0, 4) : [];
 
   const handleStatusChange = (reportId: string, newStatus: string) => {
     updateReport(reportId, { 

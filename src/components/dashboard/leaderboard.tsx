@@ -6,9 +6,9 @@ export function Leaderboard() {
   const { user, reports } = useAppStore();
   
   // Calculate user credits from their reports
-  const userCredits = (reports || [])
+  const userCredits = Array.isArray(reports) ? reports
     .filter(r => r.userId === user?.id)
-    .reduce((sum, r) => sum + r.credits, 0);
+    .reduce((sum, r) => sum + r.credits, 0) : 0;
 
   // Mock leaderboard with current user
   const leaderboard = [

@@ -7,20 +7,20 @@ export function StatsCards() {
   const { reports, user } = useAppStore();
   
   const getTotalCredits = () => {
-    return (reports || []).reduce((sum, report) => sum + report.credits, 0);
+    return Array.isArray(reports) ? reports.reduce((sum, report) => sum + report.credits, 0) : 0;
   };
 
   const getResolvedThisMonth = () => {
     const thisMonth = new Date().getMonth();
-    return (reports || []).filter(r => 
+    return Array.isArray(reports) ? reports.filter(r => 
       (r.status === 'resolved' || r.status === 'verified') && 
       r.resolvedAt && 
       new Date(r.resolvedAt).getMonth() === thisMonth
-    ).length;
+    ).length : 0;
   };
 
   const getVerifiedReports = () => {
-    return (reports || []).filter(r => r.status === 'verified').length;
+    return Array.isArray(reports) ? reports.filter(r => r.status === 'verified').length : 0;
   };
   
   const stats = [

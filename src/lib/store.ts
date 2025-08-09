@@ -255,7 +255,7 @@ export const useAppStore = create<AppState>()(
         set({ isLoading: true });
         try {
           const reports = await db.getWasteReports();
-          set({ reports });
+          set({ reports: Array.isArray(reports) ? reports : [] });
         } catch (error) {
           console.error('Error loading reports:', error);
           // Set empty array instead of leaving reports undefined

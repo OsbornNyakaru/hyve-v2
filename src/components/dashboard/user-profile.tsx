@@ -8,7 +8,7 @@ export function UserProfile() {
   const { user, reports } = useAppStore();
   const navigate = useNavigate();
   
-  if (!user) return null;
+  const userReports = Array.isArray(reports) ? reports.filter(r => r.userId === storeUser?.id) : [];
 
   const userReports = reports.filter(r => r.userId === user.id);
   const thisWeekCredits = userReports
