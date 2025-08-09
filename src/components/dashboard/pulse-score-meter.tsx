@@ -7,6 +7,8 @@ export function PulseScoreMeter() {
   
   // Calculate dynamic score based on actual data
   const calculateScore = () => {
+    if (!Array.isArray(reports)) return 50;
+    
     const totalReports = reports.length;
     const resolvedReports = reports.filter(r => r.status === 'resolved').length;
     const highUrgencyPending = reports.filter(r => r.urgency === 'high' && r.status === 'pending').length;
