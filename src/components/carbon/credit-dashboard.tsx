@@ -41,7 +41,8 @@ export function CreditDashboard() {
     
     try {
       const history = await picaOSClient.getCarbonCredits(user.id);
-      setCreditHistory(history);
+      // --- CHANGED: Ensure creditHistory is always an array ---
+      setCreditHistory(Array.isArray(history) ? history : []);
     } catch (error) {
       // Fallback to mock data
       setCreditHistory([
@@ -264,7 +265,7 @@ export function CreditDashboard() {
         </div>
 
         <div className="space-y-3 md:space-y-4">
-          {creditHistory.map((credit) => {
+          {(Array.isArray(creditHistory) ? creditHistory : []).map((credit) => {
             const Icon = getSourceIcon(credit.source);
             return (
               <div key={credit.id} className="flex items-center justify-between p-3 md:p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
