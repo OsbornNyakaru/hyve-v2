@@ -7,7 +7,15 @@ import { useNavigate } from 'react-router-dom';
 export function UserProfile() {
   const { user, reports } = useAppStore();
   const navigate = useNavigate();
-  
+
+    // Guard: if user not loaded yet, show placeholder
+  if (!user) {
+    return (
+      <Card className="p-6">
+        <p className="text-gray-500">Loading profile...</p>
+      </Card>
+    );
+  }
 
   const userReports = reports.filter(r => r.userId === user.id);
   const thisWeekCredits = userReports
